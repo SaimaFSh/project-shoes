@@ -1,40 +1,62 @@
-const express = require('express')
-const app = express()
-const bcrypt = require('bcrypt')
 
-app.use(express.json())
+import { userServiceRegister, userServiceLogin } from "../services/user.service.js";
 
-const users = []
+class UserController {
 
-app.get('/users', (req, res) => {
-  res.json(users)
-})
-
-app.post('/users', async (req, res) => {
-  try {
-    const hashedPassword = await bcrypt.hash(req.body.password, 10)
-    const user = { name: req.body.name, password: hashedPassword }
-    users.push(user)
-    res.status(201).send()
-  } catch {
-    res.status(500).send()
-  }
-})
-
-app.post('/users/login', async (req, res) => {
-  const user = users.find(user => user.name === req.body.name)
-  if (user == null) {
-    return res.status(400).send('Cannot find user')
-  }
-  try {
-    if(await bcrypt.compare(req.body.password, user.password)) {
-      res.send('Success')
-    } else {
-      res.send('Not Allowed')
+  // POST /user/register {"email": "sammieshahid@gmail.com", "pwd": "default"}
+  async register(req, res, next) {
+    if (!req.body.email || !req.body.pwd) {
+      res.status(400);
+      return res.json({ message: "Incomplete input fields, please check again" });
     }
-  } catch {
-    res.status(500).send()
-  }
-})
 
-app.listen(3000)
+    let result = {
+      message: null,
+      status: null,
+      data: null,
+    };
+
+    try {
+      const data = await userServiceRegister(req.body.email, req.body.pwd);
+      result.message = "New user registration successful";
+      result.status = 200;
+      result.data = data;
+    } catch (error) {
+      result.message = error.message;
+      result.status = 400;
+    } finally {
+      return res.json(result);
+    }
+
+  }
+
+  // POST /user/login {"email": "sammieshahid@gmail.com", "pwd": "default"}
+  async login(req, res, next) {
+    if (!req.body.email || !req.body.pwd) {
+      res.status(400);
+      return res.json({ message: "Incomplete input fields, please check again" });
+    }
+
+    let result = {
+      message: null,
+      status: null,
+      data: null,
+    };
+
+    try {
+      const data = await userServiceLogin(req.body.email, req.body.pwd);
+      result.message = "Login successful!";
+      result.status = 200;
+      result.data = data;
+    } catch (error) {
+      result.message = error.message;
+      result.status = 400;
+    } finally {
+      return res.json(result);
+    }
+
+  }
+
+    
+
+export default UserController;
